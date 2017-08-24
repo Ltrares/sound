@@ -6,32 +6,57 @@ import net.beadsproject.beads.core.AudioContext;
 import net.beadsproject.beads.core.UGen;
 import net.beadsproject.beads.ugens.Envelope;
 
-public class DarkBell extends UGen {
+public class DarkBell extends DemoElement {
 
 	double oneOverSr;
 	double currentPos = 0.0f;
 	byte[] parameters;
 	double lifeSpan = 0.0;
 	double twoPi = Math.PI * 2.0;
-
-	Envelope envelope;
-
+	float[] pan;
+	int channels = 0;
+	
 	static {
 		System.setProperty("java.util.secureRandomSeed", "true");
 	}
 
-	public DarkBell(AudioContext audioContext) {
-		super(audioContext, 1);
-		this.oneOverSr = (1.0 / audioContext.getSampleRate());
-		System.out.println("oneOverSr=" + oneOverSr);
-		this.parameters = new byte[1024];
-		ThreadLocalRandom.current().nextBytes(parameters);
-		initialize();
+	@Override
+	public String textDisplay() {
+		return "dark bell " + getId();
+	}
 
+	public DarkBell(int bufferSize, int channels) {
+		super(new AudioContext(),channels);
+		this.bufOut = new float[channels][bufferSize];
+		this.channels = channels;
+		initialize();
+	} //
+	
+	public DarkBell(AudioContext context, int channels) {
+		super(context, channels);
+		this.channels = channels;
+		initialize();
 	}
 
 	private void initialize() {
+		this.pan = new float[this.channels];
+		for ( int i = 0; i < this.channels; i++ ) {
+			this.pan[i] = 1.0f;
+		} //for
+		if ( ThreadLocalRandom.current().nextBoolean() ) {
+			int fixedChannel = ThreadLocalRandom.current().nextInt( this.channels );
+			
+			for ( int i = 0; i < this.channels; i++ ) {
+				if ( i == fixedChannel ) continue;
+				this.pan[i] = ThreadLocalRandom.current().nextFloat();
+			}
+			
+		} //if
 		
+		
+		this.oneOverSr = (1.0 / context.getSampleRate());
+		this.parameters = new byte[1024];
+		ThreadLocalRandom.current().nextBytes(parameters);	
 		double root = parameters[512] + 128.0;
 		
 		this.lifeSpan = root;
@@ -40,39 +65,21 @@ public class DarkBell extends UGen {
 			if (parameters[i] < 0) {
 				continue;
 			}
-			this.lifeSpan += (root/32.0)*Math.abs(parameters[i] / 4);
+			this.lifeSpan += (root/64.0)*Math.abs(parameters[i] / 4);
 		} // for
 
 		this.lifeSpan /= 1000.0;
 		
-		initEnvelope();
-		
-		
-	}
-
-	void initEnvelope() {
-			envelope = new Envelope(context);
-			float duration = (float)(1000.0f*lifeSpan/4.0f);
-			envelope.setValue(0.1f);
-			envelope.addSegment(ThreadLocalRandom.current().nextFloat(), duration );
-			envelope.addSegment(ThreadLocalRandom.current().nextFloat(), duration);
-			envelope.addSegment(ThreadLocalRandom.current().nextFloat(), duration);
-			envelope.addSegment(0.1f, duration);
 	}
 	
 	@Override
 	public void calculateBuffer() {
-		//envelope.update();
-//		if ( currentPos >= lifeSpan ) {
-//			currentPos = 0; 
-//			initEnvelope();
-//			System.out.println( "envelope flip" );
-//		}
+
 		for (int i = 0; i < this.bufferSize; i++) {
-			bufOut[0][i] = darkBellSound(currentPos);
+			float value = darkBellSound(currentPos);
 			currentPos += oneOverSr;
-			for (int j = 1; j < bufOut.length; j++) {
-				bufOut[j][i] = bufOut[0][i];
+			for (int j = 0; j < bufOut.length; j++) {
+				bufOut[j][i] = pan[j]*value;
 			} // for
 		}
 
@@ -89,7 +96,7 @@ public class DarkBell extends UGen {
 	}
 
 	private float darkBellSound(double pos) {
-
+		//envelope.update();
 		double value = 0.0;
 
 		int detailCount = 29;
@@ -104,11 +111,11 @@ public class DarkBell extends UGen {
 			double angle2 = twoPi * (v2 / (double) (v3 != 0 ? v3 : 1)) * 0.1 * (pos); // + 0.005*noise();
 			double angle = twoPi * (v1 / (double) (v4 != 0 ? v4 : 1)) * 200.0 * (pos); // + 50.0*noise();
 
-			double a3val = Math.max(0.1, (1.0 + Math.sin(angle3)) / 2.0);
+			double a3val = Math.max(0.1, (1.0 + QuickMath.sin(angle3)) / 2.0);
 
 			// double angle = 2.0 * Math.PI * (parameters[0]*(j+1)) *
 			// (ellapsedTime + i * tinc);
-			double jvalue = Math.sin(angle) * Math.sin(angle2) * a3val * parameters[200 + j] / v0;
+			double jvalue = QuickMath.sin(angle) * QuickMath.sin(angle2) * a3val * parameters[200 + j] / v0;
 
 			value += jvalue;
 		} // for
@@ -116,11 +123,19 @@ public class DarkBell extends UGen {
 		double nvalue = Math.tanh((0.5 / detailCount) * value  );
 		// value = Math.max(-127.0, Math.min(0.5*value,127.0) );
 
-		if (Math.random() < 0.00001) {
-			System.out.println("currentPos: " + currentPos + " value (not normalized): " + value + " normalized: " + nvalue + " envelope: " + envelope.getCurrentValue() );
-		} //if
-		return (float)nvalue; //*envelope.getCurrentValue();
+//		if (Math.random() < 0.00001) {
+//			System.out.println("currentPos: " + currentPos + " value (not normalized): " + value + " normalized: " + nvalue + " envelope: " + envelope.getCurrentValue() );
+//		} //if
+		
+		float env = (float) QuickMath.sin( Math.PI*currentPos/lifeSpan );
+		
+		return (float)nvalue*env; //*envelope.getCurrentValue();
 
+	}
+
+	@Override
+	public boolean isDone() {
+		return this.currentPos >= this.lifeSpan;
 	}
 
 }

@@ -29,7 +29,7 @@ public class Lesson01_AudioContext {
 		 * initialised with the AudioContext.
 		 */
 		//Noise db = new Noise(ac);
-		DarkBell db = new DarkBell(ac);
+		DarkBell db = null;// new DarkBell(ac);
 		
 		
 		//DarkBell db2 = new DarkBell(ac);

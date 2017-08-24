@@ -8,6 +8,7 @@ import net.beadsproject.beads.ugens.Envelope;
 import net.beadsproject.beads.ugens.Gain;
 import net.beadsproject.beads.ugens.GranularSamplePlayer;
 import net.beadsproject.beads.ugens.SamplePlayer;
+import net.beadsproject.beads.ugens.SamplePlayer.InterpolationType;
 import net.beadsproject.beads.ugens.Static;
 
 public class Lesson08_Granulation {
@@ -20,13 +21,13 @@ public class Lesson08_Granulation {
 
 		//String audioFile = "audio/87_Bm_PostGuitar_01_483.wav";
 		//String audioFile = "audio/90_D#_Humphrey_SP_313_33.wav";
-		//String audioFile = "audio/C_AncientGuitar_V1_498.wav";
+		String audioFile = "audio/C_AncientGuitar_V1_498.wav";
 		//String audioFile = "audio/GrandPianoLong_47_A#5_78_SP.wav";
 		//String audioFile = "audio/D_RomanticSpace_01_334_SP.wav";
 		//String audioFile = "audio/20_G_Keys_05_112_SP.wav";
 		//String audioFile = "audio/F#_Bowed_01_136_SP.wav";
 		//String audioFile = "audio/E_Pianodoctor_SP_57_01.wav";
-		String audioFile = "audio/35_G#_Skyfire_01_100_SP.wav";
+		//String audioFile = "audio/35_G#_Skyfire_01_100_SP.wav";
 		
 		float rate = 1.0f;
 		
@@ -73,7 +74,7 @@ public class Lesson08_Granulation {
 		player.getLoopEndUGen().setValue(
 				(float)SampleManager.sample(audioFile).getLength());
 		
-		
+		player.setInterpolationType(InterpolationType.CUBIC);
 		
 		
 		// control the rate of grain firing
@@ -81,8 +82,8 @@ public class Lesson08_Granulation {
 		//grainIntervalEnvelope.addSegment(20, 10000);
 		//player.setGrainInterval(new Static(ac, 33.0f));
 		
-		player.setGrainInterval( new Static(ac, 512.0f ));
-		player.setGrainSize(new Static(ac, 1024.0f ) );
+		player.setGrainInterval( new Static(ac, 256.0f ));
+		player.setGrainSize(new Static(ac, 512.0f ) );
 		
 		//Envelope pitchEnvelope = new Envelope(ac,0.5f);
 		//pitchEnvelope.addSegment(2.0f, 35000 );
