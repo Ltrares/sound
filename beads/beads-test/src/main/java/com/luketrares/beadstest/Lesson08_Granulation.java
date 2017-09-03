@@ -6,6 +6,7 @@ import net.beadsproject.beads.data.SampleManager;
 import net.beadsproject.beads.ugens.Clock;
 import net.beadsproject.beads.ugens.Envelope;
 import net.beadsproject.beads.ugens.Gain;
+import net.beadsproject.beads.ugens.Glide;
 import net.beadsproject.beads.ugens.GranularSamplePlayer;
 import net.beadsproject.beads.ugens.SamplePlayer;
 import net.beadsproject.beads.ugens.SamplePlayer.InterpolationType;
@@ -21,17 +22,17 @@ public class Lesson08_Granulation {
 
 		//String audioFile = "audio/87_Bm_PostGuitar_01_483.wav";
 		//String audioFile = "audio/90_D#_Humphrey_SP_313_33.wav";
-		String audioFile = "audio/C_AncientGuitar_V1_498.wav";
+		//String audioFile = "audio/C_AncientGuitar_V1_498.wav";
 		//String audioFile = "audio/GrandPianoLong_47_A#5_78_SP.wav";
 		//String audioFile = "audio/D_RomanticSpace_01_334_SP.wav";
 		//String audioFile = "audio/20_G_Keys_05_112_SP.wav";
 		//String audioFile = "audio/F#_Bowed_01_136_SP.wav";
 		//String audioFile = "audio/E_Pianodoctor_SP_57_01.wav";
-		//String audioFile = "audio/35_G#_Skyfire_01_100_SP.wav";
+		String audioFile = "audio/93_C#m_10_Oos_21__+388_SP.wav";
 		
-		float rate = 1.0f;
+		float rate = 0.05f;
 		
-		Clock clock = new Clock(ac,(float)SampleManager.sample(audioFile).getLength()/rate);
+		Clock clock = new Clock(ac,165.0f); //(float)SampleManager.sample(audioFile).getLength()/);
 
 		clock.setTimerMode(true);
 
@@ -40,15 +41,20 @@ public class Lesson08_Granulation {
 
 		final float[] pitches = { 1.0f/2.0f, 8.0f/15.0f, 2.0f/3.0f, 3.0f/4.0f, 4.0f/5.0f, 8.0f/9.0f, 1.0f, 16.0f/15.0f, 4.0f/3.0f, 3.0f/2.0f, 8.0f/5.0f, 16.0f/9.0f, 2.0f  };
 		
+		final Glide pitchGlide = new Glide( ac, 1.0f, 75 );
+		
 		clock.addMessageListener(new Bead(){
 			
 			@Override
 			protected void messageReceived(Bead bead) {
 				
 				if (!((Clock)bead).isBeat()) return;
-				System.out.println( "clock tick beat = " + ((Clock)bead).isBeat() );
 				
-				player.setPitch( new Static(ac, pitches[ (int)(pitches.length*Math.random())]) );
+				if ( Math.random() > 0.3 ) return;
+				
+				System.out.println( "clock tick beat = " + ((Clock)bead).isBeat() );
+				pitchGlide.setValue(pitches[ (int)(pitches.length*Math.random())]);
+				//player.setPitch(  );
 			}
 			
 		});
@@ -82,12 +88,12 @@ public class Lesson08_Granulation {
 		//grainIntervalEnvelope.addSegment(20, 10000);
 		//player.setGrainInterval(new Static(ac, 33.0f));
 		
-		player.setGrainInterval( new Static(ac, 256.0f ));
-		player.setGrainSize(new Static(ac, 512.0f ) );
+		player.setGrainInterval( new Static(ac, 512.0f ));
+		player.setGrainSize(new Static(ac, 1024.0f ) );
 		
 		//Envelope pitchEnvelope = new Envelope(ac,0.5f);
 		//pitchEnvelope.addSegment(2.0f, 35000 );
-		player.setPitch(new Static(ac,8.0f/9.0f));
+		player.setPitch(pitchGlide);
 		
 		// control the playback rate
 		//Envelope rateEnvelope = new Envelope(ac, 1);
@@ -103,7 +109,7 @@ public class Lesson08_Granulation {
 		/*
 		 * And as before...
 		 */
-		Gain g = new Gain(ac, 2, 0.75f);
+		Gain g = new Gain(ac, 2, 0.95f);
 		g.addInput(player);
 		ac.out.addInput(g);
 		ac.out.addDependent(clock);

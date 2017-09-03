@@ -13,50 +13,28 @@ public class DarkBell extends DemoElement {
 	byte[] parameters;
 	double lifeSpan = 0.0;
 	double twoPi = Math.PI * 2.0;
-	float[] pan;
+	
 	int channels = 0;
 	
-	static {
-		System.setProperty("java.util.secureRandomSeed", "true");
-	}
-
 	@Override
 	public String textDisplay() {
 		return "dark bell " + getId();
 	}
 
-	public DarkBell(int bufferSize, int channels) {
-		super(new AudioContext(),channels);
+	public DarkBell(AudioContext audioContext,int channels) {
+		super(audioContext,channels);
 		this.bufOut = new float[channels][bufferSize];
 		this.channels = channels;
+		this.parameters = new byte[1024];
+		ThreadLocalRandom.current().nextBytes(parameters);	
+		this.volume = 0.3f + ThreadLocalRandom.current().nextFloat()*0.7f;
 		initialize();
 	} //
 	
-	public DarkBell(AudioContext context, int channels) {
-		super(context, channels);
-		this.channels = channels;
-		initialize();
-	}
 
-	private void initialize() {
-		this.pan = new float[this.channels];
-		for ( int i = 0; i < this.channels; i++ ) {
-			this.pan[i] = 1.0f;
-		} //for
-		if ( ThreadLocalRandom.current().nextBoolean() ) {
-			int fixedChannel = ThreadLocalRandom.current().nextInt( this.channels );
-			
-			for ( int i = 0; i < this.channels; i++ ) {
-				if ( i == fixedChannel ) continue;
-				this.pan[i] = ThreadLocalRandom.current().nextFloat();
-			}
-			
-		} //if
-		
-		
+	@Override
+	public void initialize() {		
 		this.oneOverSr = (1.0 / context.getSampleRate());
-		this.parameters = new byte[1024];
-		ThreadLocalRandom.current().nextBytes(parameters);	
 		double root = parameters[512] + 128.0;
 		
 		this.lifeSpan = root;
@@ -77,10 +55,12 @@ public class DarkBell extends DemoElement {
 
 		for (int i = 0; i < this.bufferSize; i++) {
 			float value = darkBellSound(currentPos);
-			currentPos += oneOverSr;
+	
+			float env = volume*(float)QuickMath.sinFourWindow( currentPos/lifeSpan );
 			for (int j = 0; j < bufOut.length; j++) {
-				bufOut[j][i] = pan[j]*value;
+				bufOut[j][i] = env*pan[j]*value;
 			} // for
+			currentPos += oneOverSr;
 		}
 
 	}
@@ -120,7 +100,7 @@ public class DarkBell extends DemoElement {
 			value += jvalue;
 		} // for
 
-		double nvalue = Math.tanh((0.5 / detailCount) * value  );
+		double nvalue = Math.tanh((0.2 / detailCount) * value  );
 		// value = Math.max(-127.0, Math.min(0.5*value,127.0) );
 
 //		if (Math.random() < 0.00001) {
