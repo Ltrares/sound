@@ -33,11 +33,11 @@ public class TunedGrainDemoSample extends GrainDemoSample {
 	}
 
 	@Override
-	double calcPitch(double time) {		
+	float calcPitch(float time) {		
 		double freq = this.overallFrequency;
-		if ( freq == 0 ) return 1.0;
+		if ( freq == 0 ) return 1.0f;
 		
-		double correction = targetFrequency/freq;
+		float correction = (float) (targetFrequency/freq);
 		
 		return correction;
 	}

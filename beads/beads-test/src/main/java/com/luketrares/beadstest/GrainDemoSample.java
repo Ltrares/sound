@@ -8,7 +8,7 @@ import net.beadsproject.beads.data.Sample;
 import net.beadsproject.beads.ugens.Static;
 import net.beadsproject.beads.ugens.SamplePlayer.InterpolationType;
 
-public class GrainDemoSample extends DemoElement {
+public class GrainDemoSample extends DemoSample {
 
 	Sample sample;
 
@@ -19,7 +19,7 @@ public class GrainDemoSample extends DemoElement {
 	List<Grain> freeGrains = new ArrayList<>();
 	List<Grain> deadGrains = new ArrayList<>();
 
-	double pitch = 1.0;
+	//double pitch = 1.0;
 	double grainInterval = 100.0f;
 	double grainSize = 200.0f;
 	boolean loopInsideGrains = false;
@@ -39,13 +39,13 @@ public class GrainDemoSample extends DemoElement {
 	
 	long startTime = System.currentTimeMillis();
 	public GrainDemoSample(AudioContext paramAudioContext, int channels, Sample sample) {
-		super(paramAudioContext, channels);
+		super(paramAudioContext, channels, sample );
 
 		this.sample = sample;
 
 		this.interpolationType = InterpolationType.ADAPTIVE;
 
-		this.pitch = 1.0; // (new Static(paramAudioContext, 1.0f));
+		this.pitch = 1.0f; // (new Static(paramAudioContext, 1.0f));
 
 		this.grainInterval = 100.0;
 		this.grainSize = 200.0;
@@ -81,6 +81,7 @@ public class GrainDemoSample extends DemoElement {
 		paramGrain.grainSize = this.grainSize;
 	}
 
+	@Override
 	public synchronized void calculateBuffer() {
 
 		firstGrain();
@@ -155,7 +156,7 @@ public class GrainDemoSample extends DemoElement {
 		this.position += this.msPerSample * this.rate;
 		
 		//permit pitch to change once per pos+ition increment - affected by rate but not pitch		
-		this.pitch = calcPitch( this.position );
+		this.pitch = calcPitch( (float)this.position );
 		
 		if ((this.position <= this.sample.getLength()) && (this.position >= 0.0D))
 			return;
@@ -163,7 +164,7 @@ public class GrainDemoSample extends DemoElement {
 		this.isDone = true;
 	}
 
-	double calcPitch(double d) {
+	float calcPitch(float d) {
 		return this.pitch;
 	}
 
@@ -187,7 +188,7 @@ public class GrainDemoSample extends DemoElement {
 	
 	@Override
 	public String textDisplay() {
-		return super.textDisplay() + " - progress " + this.position / this.sample.getLength() + " @ " + this.rate + " age = " + (System.currentTimeMillis() - this.startTime) + "/" + sample.getLength();
+		return super.textDisplay() + " - progress=" + this.position / this.sample.getLength() + " pitch=" + this.pitch + " rate=" + this.rate + " age=" + (System.currentTimeMillis() - this.startTime) + "/" + sample.getLength();
 	}
 
 }

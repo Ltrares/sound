@@ -1,6 +1,7 @@
 package com.luketrares.beadstest;
 
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,12 +12,14 @@ public class ClasspathSampleManager {
 
 	static Map<String,Sample> samples = new ConcurrentHashMap<>();
 	
-	
+	//static Map<String,float[][]> sampleData = new ConcurrentHashMap<>();
 	static Map<String,SampleFrequency> frequencies = new ConcurrentHashMap<>();
 	
 	public Sample sample( String path ) {
-		
-		if ( samples.containsKey(path) ) return samples.get( path);
+	
+		if ( samples.containsKey(path) ) {			
+			if ( samples.containsKey(path) ) return copySample( samples.get( path) );
+		} //if
 		
 		Sample sample = loadSampleFromClasspath( path );
 		
@@ -29,13 +32,35 @@ public class ClasspathSampleManager {
 			frq.analyzeAll();
 			ts = System.currentTimeMillis() - ts;
 			
-			System.out.println( "sample length " + sample.getNumFrames() + " analyzed in " + ts + " ms" );
-			
 			frequencies.put( path,  frq );
 		}
 		
-		return sample;
+		return copySample(sample);
 		
+	}
+
+
+	public static Sample copySample(Sample source) {
+		
+		float sampleRate = source.getSampleRate();
+		int nchannels = source.getNumChannels();
+		long nframes = source.getNumFrames(); //.sampleData[0].length;			
+		Sample sample = new Sample( 1000.0*nframes/sampleRate, nchannels, sampleRate );
+		setProperty( sample, source, "theSampleData" );
+		sample.setSimpleName( source.getSimpleName() );
+
+		return sample;
+	}
+
+
+	private static void setProperty(Sample sample, Sample source, String fieldName) {
+		try {
+			Field field = source.getClass().getDeclaredField( fieldName );
+			field.setAccessible(true);
+			field.set(sample, field.get(source) );
+		} catch( Exception e ) {
+			e.printStackTrace(System.out);
+		}
 	}
 
 
@@ -43,7 +68,7 @@ public class ClasspathSampleManager {
 		
 		SampleStreamReader reader = new SampleStreamReader();
 		try (InputStream is = this.getClass().getClassLoader().getResourceAsStream( samplePath )) {
-			System.out.println( "is: " + is + " for " + samplePath );
+			//System.out.println( "is: " + is + " for " + samplePath );
 			float[][] sampleData = reader.readSample(is);
 			float sampleRate = reader.getSampleRate();
 			int nchannels = sampleData.length;
@@ -51,7 +76,7 @@ public class ClasspathSampleManager {
 			Sample sample = new Sample( 1000.0*nframes/sampleRate, nchannels, sampleRate );
 			sample.putFrames(0, sampleData);
 			sample.setSimpleName( samplePath );
-			System.out.println( "loaded sample " + samplePath + " " + nchannels + " channels");
+			//System.out.println( "loaded sample " + samplePath + " " + nchannels + " channels");
 			
 			return sample;
 		} catch( Exception e ) {			

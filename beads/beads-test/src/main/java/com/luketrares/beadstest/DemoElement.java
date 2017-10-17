@@ -22,6 +22,8 @@ public abstract class DemoElement extends UGen implements Finishable {
 
 	final int channelCount;
 
+	double delayBeforeStart = 0.0;
+	
 	private Bob instigator;
 
 	public DemoElement(AudioContext paramAudioContext, int channels) {
@@ -60,6 +62,12 @@ public abstract class DemoElement extends UGen implements Finishable {
 		return id;
 	}
 
+	public boolean isDelayed( double timeIncrement ) {		
+		if ( this.delayBeforeStart <= 0 ) return false;
+		this.delayBeforeStart -= timeIncrement;
+		return this.delayBeforeStart > 0;
+	}
+	
 	public String textDisplay() {
 		return this.getClass().getSimpleName() + " " + this.getId() + " - isDone = " + isDone();
 	}
