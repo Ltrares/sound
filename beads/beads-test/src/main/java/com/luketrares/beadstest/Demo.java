@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 
 import javax.sound.sampled.LineUnavailableException;
 
+import com.luketrares.sequences.techno_perhaps;
+
 import net.beadsproject.beads.analysis.featureextractors.FFT;
 import net.beadsproject.beads.core.AudioContext;
 import net.beadsproject.beads.core.Bead;
@@ -50,7 +52,8 @@ public class Demo extends DemoElement {
 	int measureCount = 7;
 	int recorderBeatMult = 1;
 	Set<Long> downBeats = new HashSet<Long>(Arrays.asList(0L, 2L, 4L));
-
+	CompressorEffect effect = new CompressorEffect();
+	
 	Thread updateThread;
 
 	DemoSequencer sequencer = null;
@@ -107,13 +110,20 @@ public class Demo extends DemoElement {
 
 		sequencer = new DemoSequencer(this.context, this.channelCount);
 
+		techno_perhaps tp = new techno_perhaps();
+		tp.createTracks(sequencer, sampleManager);
+			
 		this.demoElements.add(sequencer);
 		this.lastTime = System.nanoTime();
 		
 		
-		Sine sine = new Sine(this.context,this.channelCount,220);
-		this.demoElements.add(sine);
+		//Sine sine = new Sine(this.context,this.channelCount,220);
+		//this.demoElements.add(sine);
 
+//		Sample s1 = sampleManager.sample( "longs/Atmosphere_10_SP.wav");
+//		Sample s2 = sampleManager.sample( "audio/E_AcstcGtrChrd_SP_18_01.wav");
+//		DemoSampleSample dss = new DemoSampleSample(this.context,this.getChannelCount(),s1,s2);
+//		this.addElement(dss);
 	}
 
 	private static List<String> getResources(String path) {
@@ -153,7 +163,7 @@ public class Demo extends DemoElement {
 		float max = 1.1f;
 		for (DemoElement de : this.demoElements) {
 			de.calculateBuffer();
-
+			//de.applyEffect();
 			for (int i = 0; i < de.getOuts(); i++) {
 				for (int j = 0; j < this.bufferSize; j++) {
 					this.bufOut[i][j] += de.getOutBuffer(i)[j];
@@ -167,6 +177,10 @@ public class Demo extends DemoElement {
 		} // for de
 
 
+		//CompressorEffect effect = new CompressorEffect();
+		effect.calculateBuffer(this);
+		
+		
 		for (int i = 0; i < this.channels; ++i) {
 			for (int k = 0; k < this.bufferSize; ++k) {
 				this.bufOut[i][k] = (float) Math.tanh(bufOut[i][k]/2.0);
@@ -205,96 +219,6 @@ public class Demo extends DemoElement {
 		
 //		
 
-		
-		if (!sequencer.hasTrack("drum0")) {
-			//sequencer.addTrack(new DemoTrack().name("drum0").sample(sampleManager.sample("drums/14_Kick_13_180_SP.wav")).pitch(1.0).volume(1.0).measureCount(1).measureSize(4).bpm(240)
-			sequencer.addTrack(new DemoTrack().name("drum0").sample(sampleManager.sample("drums/DX_15_Ride_01_SP.wav")).pitch(1.0).volume(1.0).measureCount(1).measureSize(4).bpm(240)
-					.addBeat(new DemoBeat().location(0, 0).pitch(1.0).volume(0.2))
-					.addBeat(new DemoBeat().location(0, 2).pitch(1.0).volume(0.5))
-					.addBeat(new DemoBeat().location(0, 3).pitch(1.0).volume(0.3))
-					.ignoreSequencerPitch()
-					.tags( "percussion" )
-					);
-		}
-
-		if (!sequencer.hasTrack("rasp")) {
-			//sequencer.addTrack(new DemoTrack().name("drum0").sample(sampleManager.sample("drums/14_Kick_13_180_SP.wav")).pitch(1.0).volume(1.0).measureCount(1).measureSize(4).bpm(240)
-			sequencer.addTrack(new DemoTrack().name("rasp").sample(sampleManager.sample("audio/Rasp_A_02_341.wav")).pitch(1.0).volume(1.0).measureCount(4).measureSize(4).bpm(240)
-					.addBeat(new DemoBeat().location(0,3).pitch(1.0).volume(0.4))
-					.addBeat(new DemoBeat().location(1, 1).pitch(1.0).volume(0.3))
-					.addBeat(new DemoBeat().location(2, 3).pitch(1.0).volume(0.43))			
-					.tags( "percussion" )
-					
-					.ignoreSequencerPitch()
-					);
-		}
-		
-		
-		if ( !sequencer.hasTrack("ping")) {
-			sequencer.addTrack(new DemoTrack()
-					.name( "ping" )
-					.sample( sampleManager.sample( "audio/F_Synth_Perc_Plain_01_321_SP.wav"))
-					.paused()
-					.pitch( 440.0/sampleManager.getFrequency( "audio/F_Synth_Perc_Plain_01_321_SP.wav").getFrequencyOverall(0) )
-					.volume(1.0)
-					.measureCount(4)
-					.measureSize(4)
-					.bpm(240)
-					.addBeat(new DemoBeat().location(0, 1).pitch(1.0).volume(1.0))
-					.addBeat(new DemoBeat().location(0, 3).pitch(1.5).volume(1.0))
-					.addBeat(new DemoBeat().location(1, 1).pitch(0.5).volume(0.7))
-					.addBeat(new DemoBeat().location(1, 2).pitch(0.8).volume(0.7))
-					.addBeat(new DemoBeat().location(1, 3).pitch(1.5).volume(1.1))
-					.addBeat(new DemoBeat().location(2, 1).pitch(0.8).volume(0.7))
-					.addBeat(new DemoBeat().location(2, 3).pitch(0.8).volume(0.5))
-					.addBeat(new DemoBeat().location(3, 2).pitch(1.0).volume(0.8))
-					.addBeat(new DemoBeat().location(3, 3).pitch(1.5).volume(0.8))
-					.tags( "short" )
-					);			
-		}
-		
-		
-		if ( !sequencer.hasTrack("bass")) {
-			sequencer.addTrack(new DemoTrack()
-					.name("bass")
-					.sample( sampleManager.sample( "audio/Ab_LFCelloShortTAPE_SP_01_376.wav"))
-					.pitch( 440.0/sampleManager.getFrequency("audio/Ab_LFCelloShortTAPE_SP_01_376.wav").getFrequencyOverall(0))
-					.volume(1.0)
-					.measureCount(2)
-					.measureSize(4)
-					.bpm(240)
-					.addBeat(new DemoBeat().location(0, 1).pitch(1.0).volume(0.6))
-					.addBeat(new DemoBeat().location(0, 3).pitch(0.5).volume(0.7))
-					.addBeat(new DemoBeat().location(1, 1).pitch(1.0).volume(0.8))
-					.addBeat(new DemoBeat().location(1, 2).pitch(0.75).volume(0.7))
-					.addBeat(new DemoBeat().location(1, 4).pitch(0.5).volume(0.7))
-					.tags( "short", "bass" )
-					);
-		}
-	
-		if ( !sequencer.hasTrack("choir")) {
-			sequencer.addTrack(new DemoTrack()
-					.name("choir")
-					.tunedSample( sampleManager.sample( "audio/SoulChoirVox_01_139_SP.wav") )
-					.pitch( 440.0/sampleManager.getFrequency( "audio/SoulChoirVox_01_139_SP.wav").getFrequencyOverall(0) )
-					.volume(1.0)
-					.measureCount(36)
-					.measureSize(4)
-					.bpm(240)
-					.addBeat( new DemoBeat().location(1, 0).pitch(1.0).volume(0.5) )
-					.addBeat( new DemoBeat().location(7, 0).pitch(0.8).volume(0.6) )
-					.addBeat( new DemoBeat().location(13, 0).pitch(0.5).volume(0.47) )
-					.addBeat( new DemoBeat().location(19, 0).pitch(1.0).volume(0.6) )
-					.addBeat( new DemoBeat().location(25, 0).pitch(1.333333).volume(0.65) )
-					.addBeat( new DemoBeat().location(31, 0).pitch(0.888888).volume(0.7) )
-					.tags( "long", "background-vocal" )
-					);
-//			
-//			
-//			
-//			
-		}
-		
 		
 		
 //		if ( Math.random() < 0.001 ) {

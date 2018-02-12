@@ -25,7 +25,14 @@ public abstract class DemoElement extends UGen implements Finishable {
 	double delayBeforeStart = 0.0;
 	
 	private Bob instigator;
-
+	
+	//DemoEffect effect;
+	
+//	public void applyEffect() {
+//		if ( effect == null ) return;
+//		effect.calculateBuffer(this);
+//	}
+	
 	public DemoElement(AudioContext paramAudioContext, int channels) {
 		super(paramAudioContext, channels);
 		id = inputIdGenerator.incrementAndGet();
@@ -135,5 +142,6 @@ public abstract class DemoElement extends UGen implements Finishable {
 		return target;
 
 	}
+
 
 }

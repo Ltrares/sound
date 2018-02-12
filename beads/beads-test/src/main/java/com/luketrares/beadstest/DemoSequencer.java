@@ -8,7 +8,7 @@ import java.util.Map;
 
 import net.beadsproject.beads.core.AudioContext;
 
-public class DemoSequencer extends DemoElement {
+public class DemoSequencer extends DemoElement  {
 
 	public DemoSequencer(AudioContext paramAudioContext, int channels) {
 		super(paramAudioContext, channels);
@@ -20,8 +20,9 @@ public class DemoSequencer extends DemoElement {
 	private double ellapsedTime;
 
 	private List<DemoElement> demoElements = new ArrayList<DemoElement>();
-
+	
 	public void addTrack(DemoTrack track) {
+		track.sequencer(this);
 		tracks.put(track.getName(), track);
 	}
 
@@ -52,10 +53,15 @@ public class DemoSequencer extends DemoElement {
 				} else {
 					sample = new DemoSample(this.context, this.channelCount, ClasspathSampleManager.copySample(track.getSample()));
 				} // else
+				
+				double timeCorrection = 1.0;
+				if ( track.isUseTimeCorrection() ) {
+					timeCorrection = track.getTimeCorrection();
+				}
 				if (track.isIgnoreSequencerPitch()) {
-					sample.setPitch(track.getPitch() * beat.getPitch());
+					sample.setPitch(timeCorrection * track.getPitch() * beat.getPitch());
 				} else {
-					sample.setPitch(this.pitch * track.getPitch() * beat.getPitch());
+					sample.setPitch(this.pitch * timeCorrection * track.getPitch() * beat.getPitch());
 				}
 
 				if (track.isTunedSample())
@@ -64,7 +70,10 @@ public class DemoSequencer extends DemoElement {
 				sample.setVolume((float) (this.volume * track.getVolume() * beat.getVolume()));
 				sample.setReverse(false);
 				sample.setDelayBeforeStart(beat.getDelay());
+				//sample.setEffect( track.getEffect() );
 				demo.addElement(sample);
+				
+				
 			} //
 
 		} // for
@@ -141,5 +150,26 @@ public class DemoSequencer extends DemoElement {
 		// this.ellapsedTime/1000.0 );
 
 	}
+
+	Map<String,DemoSequencerEvent> events = new HashMap<>();
+	
+	
+//	@Override
+//	public boolean loopCompleted(DemoTrack track) {
+//		System.out.println( "loop completed " + track.getName() + " " + track.getLoopCount() + " " + track.isPaused() );
+//		//DemoSequencerEvent event = events.get( eventId( track.getName(), track.getLoopCount() ) );
+//		//if ( event == null ) return false;
+//		//event.runEvent(this);
+//		return true;
+//	}
+
+
+	private String eventId(String name, Integer loopCount) {
+		return name + "_" + loopCount;
+	}
+
+
+
+
 
 }

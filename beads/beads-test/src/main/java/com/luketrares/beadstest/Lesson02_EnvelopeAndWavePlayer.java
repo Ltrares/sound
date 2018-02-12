@@ -22,29 +22,29 @@ public class Lesson02_EnvelopeAndWavePlayer {
 		//g.addInput(demo);
 		//ac.out.addInput(g);
 		//ac.start();
-	
-		JavaSoundPlayer jsp = new JavaSoundPlayer( (int)ac.getSampleRate(), demo.getChannelCount(), ac.getAudioFormat().bitDepth/8, ac.getBufferSize()  );
-		
-		
-		while ( true ) {
-			float[][] sound = new float[demo.getChannelCount()][];
-			if ( jsp.ready( ac.getBufferSize() ) ) {
-				demo.calculateBuffer();
-				for ( int i = 0; i < demo.getChannelCount(); i++ ) {
-					sound[i] = demo.getOutBuffer(i);
-				} //
-				//System.out.println( "updated" );
-				jsp.play( sound );
-			} else {
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		
+//	
+//		JavaSoundPlayer jsp = new JavaSoundPlayer( (int)ac.getSampleRate(), demo.getChannelCount(), ac.getAudioFormat().bitDepth/8, ac.getBufferSize()  );
+//		
+//		
+//		while ( true ) {
+//			float[][] sound = new float[demo.getChannelCount()][];
+//			if ( jsp.ready( ac.getBufferSize() ) ) {
+//				demo.calculateBuffer();
+//				for ( int i = 0; i < demo.getChannelCount(); i++ ) {
+//					sound[i] = demo.getOutBuffer(i);
+//				} //
+//				//System.out.println( "updated" );
+//				jsp.play( sound );
+//			} else {
+//				try {
+//					Thread.sleep(1);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//		}
+//		
 		
 	}
 }

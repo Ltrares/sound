@@ -3,8 +3,10 @@ package com.luketrares.beadstest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.beadsproject.beads.data.Sample;
@@ -25,17 +27,23 @@ public class DemoTrack {
 	double ellapsedTime = 0.0;
 	int currentIndex = 0;
 	private boolean paused;
-	private boolean unpauseAtNextStart;
-	private boolean pauseAtNextEnd;
-
 	private boolean tunedSample = false;
 	
 	int currentVariation = 0;
 	int nextVariation = 0;
-
+	
+	int loopCount = 0;
+	
+	double timeCorrection = 1.0;
+	boolean useTimeCorrection = false;
+	
+	Map<Double,List<DemoTrackEvent>> trackEvents = new HashMap<>();
+	
+	
+	DemoSequencer sequencer;
 	
 	private Set<String> tags = new HashSet<String>();
-	
+		
 	public DemoTrack() {
 		this.beats.add(new ArrayList<DemoBeat>());
 	}
@@ -207,25 +215,43 @@ public class DemoTrack {
 		List<DemoBeat> results = null;
 		double tt = getTrackTime();
 
+		if ( currentTime == 0 ) {
+			
+			double sampleLength = this.sample.getLength();
+			
+			System.out.println( "expected track length " + tt + ", actual track length " + sampleLength );
+			
+			this.timeCorrection = sampleLength/tt;
+			System.out.println( "track length correction = " + this.timeCorrection );
+		} //
+		
 		while (currentTime <= ellapsedTime) {
 			if (currentTime >= tt) {
-				currentTime -= tt;
+				loopCount++;
+				
+				currentTime = 0;
 				currentIndex = 0;
 				ellapsedTime -= tt;
 
-				if (this.isUnpauseAtNextStart()) {
-					this.paused = false;
-					this.setUnpauseAtNextStart(false);
-				} // if
-
-				if (this.isPauseAtNextEnd()) {
-					this.paused = true;
-					this.setPauseAtNextEnd(false);
-				} // if
-
 				this.currentVariation = this.nextVariation;
+			
+				
+				System.out.println( this.getName() + " " + loopCount + " loops completed at " + this.totalTime );
+				//sequencer.loopCompleted(this);
 			} // if
 
+			double trackEventIndex = getTrackEventIndex( loopCount, currentTime/tt );
+			
+			List<DemoTrackEvent> events = trackEvents.get(trackEventIndex);
+			
+			if ( events != null && events.size() > 0 ) {
+				System.out.println( "running track event on track " + name + " at " + trackEventIndex + " (" + currentTime + ")" );
+				for ( DemoTrackEvent event : events ) {
+					event.run( sequencer, this );
+				} //
+			}
+			
+			
 			if (currentIndex < this.beats.get(currentVariation).size() && getBeatTime(this.beats.get(currentVariation).get(currentIndex)) <= currentTime) {
 
 				if (results == null)
@@ -233,19 +259,28 @@ public class DemoTrack {
 
 				DemoBeat cbeat = this.beats.get(currentVariation).get(currentIndex);
 				cbeat.setDelay(delay);
-				
 	
-				if (!paused)
+				if (!paused) {
 					results.add(cbeat);
+					System.out.println( "playing " + this.getName() + " at " + currentTime + "/" + totalTime );
+				} else {
+					System.out.println( "skipping paused beat for track " + this.getName() );
+				}
 				currentIndex++;
 
 			} //
 
 			currentTime += 1.0;
 			delay += 1.0;
+			totalTime += 1.0;
 		}
 
 		return results;
+	}
+
+	private double getTrackEventIndex(int loopCount, double timeInLoop) {
+		double result = loopCount + Math.floor(timeInLoop*1000)/1000.0;
+		return result;
 	}
 
 	private double getBeatTime(DemoBeat demoBeat) {
@@ -280,22 +315,6 @@ public class DemoTrack {
 
 	public void setPaused(boolean paused) {
 		this.paused = paused;
-	}
-
-	public boolean isUnpauseAtNextStart() {
-		return unpauseAtNextStart;
-	}
-
-	public void setUnpauseAtNextStart(boolean unpauseAtNextStart) {
-		this.unpauseAtNextStart = unpauseAtNextStart;
-	}
-
-	public boolean isPauseAtNextEnd() {
-		return pauseAtNextEnd;
-	}
-
-	public void setPauseAtNextEnd(boolean pauseAtNextEnd) {
-		this.pauseAtNextEnd = pauseAtNextEnd;
 	}
 
 	public int getCurrentVariation() {
@@ -356,5 +375,70 @@ public class DemoTrack {
 		return this;
 	}
 
+	public DemoSequencer getSequencer() {
+		return sequencer;
+	}
+
+	public void setSequencer(DemoSequencer sequencer) {
+		this.sequencer = sequencer;
+	}
+
+
+	public DemoTrack sequencer(DemoSequencer sequencer) {
+		this.sequencer = sequencer;
+		return this;
+	}
+
+	public int getLoopCount() {
+		return loopCount;
+	}
+
+	public void setLoopCount(int loopCount) {
+		this.loopCount = loopCount;
+	}
+
+	public DemoTrack pauseAfter( double loopTime ) {
+		double index = Math.floor(loopTime*1000.0)/1000.0;
+		addTrackEvent( index, (sequencer, demoTrack) -> demoTrack.setPaused(true));
+		return this;
+	}
+	
+	public DemoTrack unpauseAfter( double loopTime ) {
+		double index = Math.floor(loopTime*1000.0)/1000.0;
+		addTrackEvent( index, (sequencer, demoTrack) -> demoTrack.setPaused(false));
+		System.out.println( "unpause event scheduled on track " + name + " at " + index );
+		return this;
+	}
+
+	private void addTrackEvent(double index, DemoTrackEvent event) {
+		List<DemoTrackEvent> events = trackEvents.get(index);
+		if ( events == null ) {
+			events = new ArrayList<DemoTrackEvent>();
+			trackEvents.put(index, events);
+		} //if
+		events.add(event);
+		
+	}
+
+	public double getTimeCorrection() {
+		return timeCorrection;
+	}
+
+	public void setTimeCorrection(double timeCorrection) {
+		this.timeCorrection = timeCorrection;
+	}
+
+	public boolean isUseTimeCorrection() {
+		return useTimeCorrection;
+	}
+
+	public void setUseTimeCorrection(boolean useTimeCorrection) {
+		this.useTimeCorrection = useTimeCorrection;
+	}
+	
+	public DemoTrack useTimeCorrection() {
+		this.setUseTimeCorrection(true);
+		return this;
+	}
 	
 }
